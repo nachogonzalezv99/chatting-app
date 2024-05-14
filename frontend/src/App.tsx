@@ -1,41 +1,51 @@
-import { useEffect, useState } from "react";
-import { socket } from "./utils/socket";
+import {
+  APIProvider,
+  AdvancedMarker,
+  InfoWindow,
+  Map,
+  Pin
+} from "@vis.gl/react-google-maps";
+import { useState } from "react";
+import { ClusterMarkers } from "./components/ClusterMarker";
+import trees from "./data/trees";
+import { env } from "./env";
+import { Directions } from "./components/Directions";
 
-function App() {
-  const [messages, setMessages] = useState<string[]>([]);
-  const onSubmit = (event: any) => {
-    event.preventDefault();
-
-    socket.timeout(5000).emit("chat-message", event.target.message.value);
+export default function App() {
+  const position: google.maps.LatLng | google.maps.LatLngLiteral = {
+    lat: 53.54,
+    lng: 2,
   };
-
-  useEffect(() => {
-    const messageEvent = (value: string) => {
-      setMessages((prev) => [...prev, value]);
-    };
-    socket.on("chat-message", messageEvent);
-
-    return () => {
-      socket.off("chat-message", messageEvent);
-    };
-  }, []);
+  const [open, setOpen] = useState(false);
 
   return (
-    <div className="h-screen w-screen flex flex-col pb-20">
-      <div className="flex-1 flex-col">
-        {messages.map((message) => (
-          <p>{message}</p>
-        ))}
-      </div>
-      <form onSubmit={onSubmit} className="flex w-80 bg-red-200 mx-auto">
-        <input
-          name="message"
-          className="w-full border border-gray-300 py-1 px-2"
-        />
-        <button className="bg-gray-300 border px-2 py-1">Send</button>
-      </form>
+    <div className="h-screen w-full">
+      <APIProvider apiKey={env.VITE_GOOGLE_MAPS_API_KEY}>
+        <Map
+          zoom={9}
+          center={position}
+          mapId={env.VITE_GOOGLE_MAP_ID}
+          fullscreenControl={false}
+        >
+          <Directions />
+          <AdvancedMarker position={{ lat: 55.54, lng: 2.5 }}></AdvancedMarker>
+          <AdvancedMarker position={position} onClick={() => setOpen(true)}>
+            <Pin
+              background="gray"
+              borderColor="green"
+              glyphColor="purple"
+              scale={2}
+            />
+          </AdvancedMarker>
+          {open && (
+            <InfoWindow position={position} onCloseClick={() => setOpen(false)}>
+              <p>I'am a message</p>
+            </InfoWindow>
+          )}
+          {/* <Markers points={trees} /> */}
+          <ClusterMarkers points={trees} />
+        </Map>
+      </APIProvider>
     </div>
   );
 }
-
-export default App;
